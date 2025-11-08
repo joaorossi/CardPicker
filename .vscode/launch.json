@@ -1,0 +1,15 @@
+{
+    "configurations": [
+    {
+        "name": "Launch",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/build/CardPicker.exe",
+        "args": [ ],
+        "stopAtEntry": false,
+        "cwd": "${fileDirname}",
+        "environment": [],
+        "console": "externalTerminal"
+    }
+    ]
+}

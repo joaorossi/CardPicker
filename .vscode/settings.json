@@ -1,0 +1,9 @@
+{
+    "cmake.configureOnEdit": false,
+    "cmake.configureOnOpen": false,
+    "cmake.automaticReconfigure": false,
+    "cmake.exportCompileCommandsFile": true,
+    "cmake.generator": "Ninja",
+    "clangd.arguments": [ "--header-insertion=never" ],
+    "C_Cpp.intelliSenseEngine": "disabled"
+}
