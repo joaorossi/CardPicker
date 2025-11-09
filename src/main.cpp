@@ -4,36 +4,49 @@
 #include <thread>
 #include <chrono>
 
-using namespace std::literals::chrono_literals;
-
-Image MatToImage(const cv::Mat& mat)
-{
-    cv::cvtColor(mat, mat, cv::COLOR_BGR2RGB);
-    Image img = { mat.data, mat.cols, mat.rows, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8 };
-    return img;
-}
+// Max number of camera indices to try
+static const int MAX_NUM_CAMERAS { 5 };
 
 int main()
 {
-    std::string url = "rtsp://127.0.0.1:8554/live";
-    std::cout << "Waiting for Larix Broadcaster to connect to: " << url << "\n";
-
-    cv::VideoCapture cap;
-    while (true)
+    // keep a count of avaiable video caption device IDs
+    std::vector<cv::String> camera_ids;
+    for (int i = 0; i < MAX_NUM_CAMERAS; ++i)
     {
-        cap.open(url);
+        cv::VideoCapture cap(i);
         if (cap.isOpened())
-            break;
-
-        std::cerr << "Could not open stream, trying again is 2s...\n";
-        std::this_thread::sleep_for(2s);
+            camera_ids.push_back(cap.getBackendName());
     }
 
-    int width  = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
-    int height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+    cv::VideoCapture cap;
+    if (camera_ids.size())
+    {
+        int idx { 0 };
+        for (const auto& c : camera_ids)
+        {
+            if (cap.open(idx))
+            {
+                std::cout << "Opened camera id: " << idx << "; " << c << std::endl;
+                break;
+            }
+            else
+            {
+                ++idx;
+                std::cout << "Failed opening camera id: " << idx << "; " << c << std::endl;
+            }
+        }
+        if (idx == camera_ids.size())
+        {
+            std::cout << "Couldn't open a camera stream." << std::endl;
+            return 0;
+        }
+    }
 
-    InitWindow(width, height, "CardVision - iPhone RTSP Feed");
-    SetTargetFPS(60);
+    auto width { static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH)) };
+    auto height { static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT)) };
+
+    InitWindow(width, height, "CardPicker");
+    SetTargetFPS(30);
 
     Texture2D tex = { 0 };
     cv::Mat frame;
@@ -44,16 +57,21 @@ int main()
             continue;
 
         BeginDrawing();
-        ClearBackground(BLACK);
+        {
+            ClearBackground(BLACK);
 
-        Image img = MatToImage(frame);
-        if (tex.id == 0)
-            tex = LoadTextureFromImage(img);
-        else
-            UpdateTexture(tex, img.data);
+            // OpenCV uses diffente channel ordering than raylib
+            cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+            Image img { frame.data, frame.cols, frame.rows, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8 };
 
-        DrawTexture(tex, 0, 0, WHITE);
-        DrawText("Live: iPhone Stream", 10, 10, 20, GREEN);
+            if (tex.id == 0)
+                tex = LoadTextureFromImage(img);
+            else
+                UpdateTexture(tex, img.data);
+
+            DrawTexture(tex, 0, 0, WHITE);
+            DrawFPS(width - 80, 10);
+        }
         EndDrawing();
     }
 
