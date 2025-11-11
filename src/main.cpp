@@ -166,7 +166,6 @@ int main()
             // Draw detected card preview thumb
             int card_idx { 0 };
             int preview_Y { 20 };
-
             for (auto& card : card_images)
             {
                 cv::cvtColor(card, card, cv::COLOR_BGR2RGB);
@@ -179,6 +178,7 @@ int main()
 
                 DrawTexture(card_tex[card_idx], width - card_img.width - 20, preview_Y, WHITE);
                 preview_Y += card_img.height + 20;
+                ++card_idx;
             }
 
             DrawFPS(10, 10);
